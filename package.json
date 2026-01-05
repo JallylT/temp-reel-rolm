@@ -1,0 +1,21 @@
+{
+  "name": "temp-reel-app",
+  "version": "1.0.0",
+  "description": "Application temps réel avec Socket.IO, SQLite et authentification",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["websocket", "realtime", "chat"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1",
+    "sqlite3": "^5.1.7",
+    "bcrypt": "^5.1.1",
+    "uuid": "^9.0.1",
+    "validator": "^13.11.0"
+  }
+}

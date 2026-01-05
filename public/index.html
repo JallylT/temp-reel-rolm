@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Temps Réel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            height: 90vh;
+            background: #000000;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 255, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 2px solid #00ff00;
+        }
+
+        /* Écran de connexion */
+        #auth-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            padding: 40px;
+        }
+
+        .auth-box {
+            background: #0a0a0a;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 255, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #00ff00;
+        }
+
+        .auth-box h2 {
+            margin-bottom: 30px;
+            color: #00ff00;
+            text-align: center;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            background: #000000;
+            color: #ffffff;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #00ff00;
+            color: #000000;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+
+        .btn:hover {
+            background: #00dd00;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #004400;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+        }
+
+        .btn-secondary:hover {
+            background: #005500;
+        }
+
+        .error {
+            color: #ff0000;
+            margin-top: 10px;
+            text-align: center;
+            font-size: 14px;
+            text-shadow: 0 0 5px #ff0000;
+        }
+
+        .success {
+            color: #00ff00;
+            margin-top: 10px;
+            text-align: center;
+            font-size: 14px;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        /* Écran de chat */
+        #chat-screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-header {
+            background: #000000;
+            color: #ffffff;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #00ff00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            text-shadow: none;
+            color: #ffffff;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-tab {
+            padding: 10px 20px;
+            background: #001100;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-tab:hover {
+            background: #003300;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .nav-tab.active {
+            background: #00ff00;
+            color: #000000;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #ffffff;
+        }
+
+        .status {
+            width: 10px;
+            height: 10px;
+            background: #00ff00;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 10px #00ff00; }
+            50% { opacity: 0.5; box-shadow: 0 0 20px #00ff00; }
+        }
+
+        .status.disconnected {
+            background: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        .chat-main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #0a0a0a;
+            border-right: 2px solid #00ff00;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            margin-bottom: 15px;
+            color: #ffffff;
+            font-size: 18px;
+            text-shadow: none;
+        }
+
+        .user-list {
+            list-style: none;
+        }
+
+        .user-list li {
+            padding: 10px;
+            background: #001100;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #ffffff;
+            border: 1px solid #00ff00;
+        }
+
+        .user-list li::before {
+            content: '• ';
+        }
+
+        .monitoring {
+            margin-top: 30px;
+            padding: 15px;
+            background: #001100;
+            border-radius: 8px;
+            font-size: 12px;
+            border: 1px solid #00ff00;
+        }
+
+        .monitoring h3 {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .monitoring p {
+            margin: 5px 0;
+            color: #ffffff;
+        }
+
+        .monitoring strong {
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .chat-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #000000;
+        }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 70%;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.own {
+            align-self: flex-end;
+        }
+
+        .message-header {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .message.own .message-header {
+            justify-content: flex-end;
+        }
+
+        .message-username {
+            font-weight: 600;
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .message-time {
+            color: #ffffff;
+            opacity: 0.7;
+        }
+
+        .message-content {
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: #0a0a0a;
+            word-wrap: break-word;
+            color: #ffffff;
+            border: 1px solid #00ff00;
+        }
+
+        .message.own .message-content {
+            background: #00ff00;
+            color: #000000;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .input-area {
+            padding: 20px;
+            background: #0a0a0a;
+            border-top: 2px solid #00ff00;
+            display: flex;
+            gap: 10px;
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #00ff00;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            background: #000000;
+            color: #ffffff;
+        }
+
+        #message-input:focus {
+            border-color: #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        #send-btn {
+            padding: 12px 30px;
+            background: #00ff00;
+            color: #000000;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        #send-btn:hover {
+            background: #00dd00;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.8);
+        }
+
+        #send-btn:disabled {
+            background: #003300;
+            color: #006600;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .notification {
+            text-align: center;
+            padding: 10px;
+            background: #001100;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #ffffff;
+            border: 1px solid #00ff00;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Board styles */
+        #board-view {
+            display: none;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #board-view.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chat-view {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        #chat-view.active {
+            display: flex;
+        }
+
+        .board-header {
+            padding: 20px;
+            background: #0a0a0a;
+            border-bottom: 2px solid #00ff00;
+        }
+
+        .board-header button {
+            padding: 12px 24px;
+            background: #00ff00;
+            color: #000000;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .board-header button:hover {
+            background: #00dd00;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.8);
+        }
+
+        .board-columns {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            flex: 1;
+            overflow-x: auto;
+            background: #000000;
+        }
+
+        .board-column {
+            flex: 1;
+            min-width: 300px;
+            background: #0a0a0a;
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            border: 2px solid #00ff00;
+        }
+
+        .board-column h3 {
+            margin-bottom: 15px;
+            color: #ffffff;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-shadow: none;
+        }
+
+        .column-count {
+            background: #00ff00;
+            color: #000000;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 14px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .board-items {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+        }
+
+        .board-item {
+            background: #001100;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 255, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+            animation: slideIn 0.3s ease;
+            border: 1px solid #00ff00;
+        }
+
+        .board-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 255, 0, 0.4);
+            border-color: #00ff00;
+        }
+
+        .board-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .board-item-title {
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 16px;
+            flex: 1;
+            text-shadow: none;
+        }
+
+        .board-item-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .board-item-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .board-item-actions button:hover {
+            opacity: 1;
+        }
+
+        .board-item-content {
+            color: #ffffff;
+            opacity: 0.8;
+            font-size: 14px;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+        }
+
+        .board-item-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #ffffff;
+            opacity: 0.7;
+            border-top: 1px solid #00ff00;
+            padding-top: 10px;
+        }
+
+        .board-item-author {
+            font-weight: 600;
+            color: #00ff00;
+            text-shadow: 0 0 3px #00ff00;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #0a0a0a;
+            border-radius: 15px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 255, 0, 0.5);
+            border: 2px solid #00ff00;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .modal-content .input-group {
+            margin-bottom: 15px;
+        }
+
+        .modal-content .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .modal-content .input-group input,
+        .modal-content .input-group textarea,
+        .modal-content .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            background: #000000;
+            color: #ffffff;
+        }
+
+        .modal-content .input-group input:focus,
+        .modal-content .input-group textarea:focus,
+        .modal-content .input-group select:focus {
+            outline: none;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .modal-content .input-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-primary {
+            background: #00ff00;
+            color: #000000;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .btn-primary:hover {
+            background: #00dd00;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.8);
+        }
+
+        .btn-cancel {
+            background: #001100;
+            color: #ffffff;
+            border: 2px solid #00ff00;
+        }
+
+        .btn-cancel:hover {
+            background: #003300;
+        }
+
+        #chat-view.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Écran d'authentification -->
+        <div id="auth-screen">
+            <div class="auth-box">
+                <h2>Chat Temps Réel</h2>
+                <div id="login-form">
+                    <div class="input-group">
+                        <label for="login-username">Pseudo</label>
+                        <input type="text" id="login-username" placeholder="Votre pseudo" autocomplete="username">
+                    </div>
+                    <div class="input-group">
+                        <label for="login-password">Mot de passe</label>
+                        <input type="password" id="login-password" placeholder="Votre mot de passe" autocomplete="current-password">
+                    </div>
+                    <button class="btn" onclick="login()">Se connecter</button>
+                    <button class="btn btn-secondary" onclick="showRegister()">Créer un compte</button>
+                    <div id="login-message"></div>
+                </div>
+
+                <div id="register-form" class="hidden">
+                    <div class="input-group">
+                        <label for="register-username">Pseudo</label>
+                        <input type="text" id="register-username" placeholder="Choisir un pseudo (3-20 caractères)" autocomplete="username">
+                    </div>
+                    <div class="input-group">
+                        <label for="register-password">Mot de passe</label>
+                        <input type="password" id="register-password" placeholder="Choisir un mot de passe" autocomplete="new-password">
+                    </div>
+                    <button class="btn" onclick="register()">Créer le compte</button>
+                    <button class="btn btn-secondary" onclick="showLogin()">Retour à la connexion</button>
+                    <div id="register-message"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Écran de chat -->
+        <div id="chat-screen">
+            <div class="chat-header">
+                <div class="header-left">
+                    <h1>Temps Réel</h1>
+                    <div class="nav-tabs">
+                        <button class="nav-tab active" onclick="switchTab('chat')">Chat</button>
+                        <button class="nav-tab" onclick="switchTab('board')">Board</button>
+                    </div>
+                </div>
+                <div class="user-info">
+                    <div class="status" id="connection-status"></div>
+                    <span id="current-username">Utilisateur</span>
+                </div>
+            </div>
+            <div class="chat-main">
+                <div class="sidebar">
+                    <h3>Utilisateurs connectés</h3>
+                    <ul class="user-list" id="user-list">
+                        <li>Chargement...</li>
+                    </ul>
+
+                    <div class="monitoring">
+                        <h3>Monitoring</h3>
+                        <p>Connexions actives: <strong id="active-connections">0</strong></p>
+                        <p>Total connexions: <strong id="total-connections">0</strong></p>
+                        <p>Messages envoyés: <strong id="messages-count">0</strong></p>
+                        <p>Latence: <strong id="latency">0</strong> ms</p>
+                    </div>
+                </div>
+
+                <!-- Vue Chat -->
+                <div class="chat-content active" id="chat-view">
+                    <div class="messages" id="messages"></div>
+                    <div class="input-area">
+                        <input type="text" id="message-input" placeholder="Tapez votre message..." maxlength="500">
+                        <button id="send-btn" onclick="sendMessage()">Envoyer</button>
+                    </div>
+                </div>
+
+                <!-- Vue Board -->
+                <div id="board-view">
+                    <div class="board-header">
+                        <button onclick="openCreateItemModal()">+ Nouvel item</button>
+                    </div>
+                    <div class="board-columns">
+                        <div class="board-column">
+                            <h3>À faire <span class="column-count" id="count-todo">0</span></h3>
+                            <div class="board-items" id="column-todo"></div>
+                        </div>
+                        <div class="board-column">
+                            <h3>En cours <span class="column-count" id="count-inprogress">0</span></h3>
+                            <div class="board-items" id="column-inprogress"></div>
+                        </div>
+                        <div class="board-column">
+                            <h3>Terminé <span class="column-count" id="count-done">0</span></h3>
+                            <div class="board-items" id="column-done"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal création/édition item -->
+        <div class="modal" id="item-modal">
+            <div class="modal-content">
+                <h2 id="modal-title">Nouvel item</h2>
+                <div class="input-group">
+                    <label for="item-title">Titre</label>
+                    <input type="text" id="item-title" placeholder="Titre de l'item" maxlength="100">
+                </div>
+                <div class="input-group">
+                    <label for="item-content">Description</label>
+                    <textarea id="item-content" placeholder="Description (optionnel)" maxlength="500"></textarea>
+                </div>
+                <div class="input-group">
+                    <label for="item-assigned">Assigner à</label>
+                    <select id="item-assigned">
+                        <option value="">Personne</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="item-column">Colonne</label>
+                    <select id="item-column">
+                        <option value="todo">À faire</option>
+                        <option value="inprogress">En cours</option>
+                        <option value="done">Terminé</option>
+                    </select>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn-cancel" onclick="closeItemModal()">Annuler</button>
+                    <button class="btn-primary" onclick="saveItem()">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
